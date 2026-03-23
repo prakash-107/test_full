@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Flask CRUD App</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <h1>CRUD App</h1>
+  <input id="itemInput" placeholder="Enter item name">
+  <button onclick="addItem()">Add</button>
+  <ul id="itemsList"></ul>
+
+  <script>
+    const API_URL = "http://localhost:5000/items";
+
+    async function loadItems() {
+      const res = await fetch(API_URL);
+      const items = await res.json();
+      const list = document.getElementById("itemsList");
+      list.innerHTML = "";
+
+      items.forEach(item => {
+        const li = document.createElement("li");
+
+        // Item name span
+        const span = document.createElement("span");
+        span.textContent = item.name;
+        li.appendChild(span);
+
+        // Edit button
+        const editBtn = document.createElement("button");
+        editBtn.textContent = "Edit";
+        editBtn.onclick = () => {
+          const input = document.createElement("input");
+          input.value = item.name;
+
+          const saveBtn = document.createElement("button");
+          saveBtn.textContent = "Save";
+          saveBtn.onclick = async () => {
+            await updateItem(item._id, input.value);
+          };
+
+          // Replace span with input + save button
+          li.innerHTML = "";
+          li.appendChild(input);
+          li.appendChild(saveBtn);
+
+          // Add back delete button
+          const delBtn = document.createElement("button");
+          delBtn.textContent = "Delete";
+          delBtn.onclick = () => deleteItem(item._id);
+          li.appendChild(delBtn);
+        };
+        li.appendChild(editBtn);
+
+        // Delete button
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "Delete";
+        delBtn.onclick = () => deleteItem(item._id);
+        li.appendChild(delBtn);
+
+        list.appendChild(li);
+      });
+    }
+
+    async function addItem() {
+      const name = document.getElementById("itemInput").value;
+      if (!name) return;
+      await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name })
+      });
+      document.getElementById("itemInput").value = "";
+      loadItems();
+    }
+
+    async function updateItem(id, newName) {
+      if (!newName) return;
+      await fetch(`${API_URL}/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newName })
+      });
+      loadItems();
+    }
+
+    async function deleteItem(id) {
+      await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+      loadItems();
+    }
+
+    loadItems();
+  </script>
+</body>
+</html>
